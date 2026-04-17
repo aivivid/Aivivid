@@ -1,0 +1,442 @@
+import { useState, useEffect, useRef } from "react";
+
+const PLANS = [
+  {
+    id: "free",
+    name: "Gratuit",
+    price: 0,
+    credits: 5,
+    features: ["5 crédits offerts", "Vidéos 5s", "720p", "Watermark"],
+    cta: "Commencer gratuitement",
+    highlight: false,
+  },
+  {
+    id: "starter",
+    name: "Starter",
+    price: 9.99,
+    credits: 100,
+    features: ["100 crédits / mois", "Vidéos 10s", "1080p HD", "Sans watermark", "Support email"],
+    cta: "Choisir Starter",
+    highlight: false,
+  },
+  {
+    id: "pro",
+    name: "Pro",
+    price: 29.99,
+    credits: 400,
+    features: ["400 crédits / mois", "Vidéos 15s", "4K Ultra HD", "Sans watermark", "Support prioritaire", "Accès bêta"],
+    cta: "Choisir Pro",
+    highlight: true,
+  },
+  {
+    id: "ultra",
+    name: "Ultra",
+    price: 79.99,
+    credits: 1500,
+    features: ["1500 crédits / mois", "Vidéos 30s", "4K + avatar IA", "API Access", "Manager dédié", "White-label"],
+    cta: "Choisir Ultra",
+    highlight: false,
+  },
+];
+
+const EXAMPLES = [
+  { label: "Portrait cinématique", emoji: "🎬", desc: "Femme marchant dans Paris au coucher du soleil" },
+  { label: "Product shot", emoji: "📦", desc: "Bouteille de parfum avec particules dorées" },
+  { label: "Avatar IA", emoji: "🤖", desc: "Présentateur virtuel qui parle face caméra" },
+  { label: "Paysage épique", emoji: "🌋", desc: "Volcan en éruption au ralenti 4K" },
+];
+
+const NAV_ITEMS = ["Fonctionnalités", "Exemples", "Tarifs", "API"];
+
+export default function App() {
+  const [page, setPage] = useState("home");
+  const [prompt, setPrompt] = useState("");
+  const [generating, setGenerating] = useState(false);
+  const [progress, setProgress] = useState(0);
+  const [result, setResult] = useState(null);
+  const [credits, setCredits] = useState(5);
+  const [selectedPlan, setSelectedPlan] = useState(null);
+  const [activeSection, setActiveSection] = useState("hero");
+  const [menuOpen, setMenuOpen] = useState(false);
+  const [hoveredPlan, setHoveredPlan] = useState(null);
+  const progressRef = useRef(null);
+
+  const scrollToSection = (id) => {
+    document.getElementById(id)?.scrollIntoView({ behavior: "smooth" });
+    setMenuOpen(false);
+  };
+
+  const handleGenerate = async () => {
+    if (!prompt.trim() || credits <= 0) return;
+    setGenerating(true);
+    setProgress(0);
+    setResult(null);
+    progressRef.current = setInterval(() => {
+      setProgress((p) => {
+        if (p >= 95) { clearInterval(progressRef.current); return 95; }
+        return p + Math.random() * 8;
+      });
+    }, 300);
+    setTimeout(() => {
+      clearInterval(progressRef.current);
+      setProgress(100);
+      setCredits((c) => c - 1);
+      setResult({ prompt, duration: "8s", resolution: "1080p" });
+      setGenerating(false);
+    }, 6000);
+  };
+
+  const handlePlanSelect = (plan) => {
+    setSelectedPlan(plan);
+    setTimeout(() => setSelectedPlan(null), 2000);
+  };
+
+  if (page === "app") {
+    return <AppPage prompt={prompt} setPrompt={setPrompt} generating={generating} progress={progress} result={result} credits={credits} handleGenerate={handleGenerate} setPage={setPage} examples={EXAMPLES} />;
+  }
+
+  return (
+    <div style={{ fontFamily: "'Syne', sans-serif", background: "#050507", color: "#fff", minHeight: "100vh", overflowX: "hidden" }}>
+      <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet" />
+      <style>{`
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        ::-webkit-scrollbar { width: 4px; } ::-webkit-scrollbar-track { background: #050507; } ::-webkit-scrollbar-thumb { background: #ff3c00; border-radius: 2px; }
+        @keyframes float { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-12px)} }
+        @keyframes pulse-ring { 0%{transform:scale(1);opacity:.8} 100%{transform:scale(1.8);opacity:0} }
+        @keyframes shimmer { 0%{background-position:-200% 0} 100%{background-position:200% 0} }
+        @keyframes scanline { 0%{top:-10%} 100%{top:110%} }
+        @keyframes glow-pulse { 0%,100%{opacity:.4} 50%{opacity:1} }
+        @keyframes fadeInUp { from{opacity:0;transform:translateY(30px)} to{opacity:1;transform:translateY(0)} }
+        @keyframes rotateSlow { from{transform:rotate(0deg)} to{transform:rotate(360deg)} }
+        @keyframes blink { 0%,100%{opacity:1} 50%{opacity:0} }
+        .fade-in { animation: fadeInUp .7s ease forwards; }
+        .shimmer-btn { background: linear-gradient(90deg, #ff3c00 0%, #ff7a00 50%, #ff3c00 100%); background-size: 200% auto; animation: shimmer 2s linear infinite; }
+        .card-hover { transition: transform .3s ease, box-shadow .3s ease; }
+        .card-hover:hover { transform: translateY(-6px); box-shadow: 0 20px 60px rgba(255,60,0,.2); }
+        .plan-card { transition: all .3s ease; border: 1px solid rgba(255,255,255,.07); }
+        .plan-card:hover { border-color: rgba(255,60,0,.5); background: rgba(255,60,0,.05) !important; }
+        .cursor-glow { cursor: pointer; }
+        .nav-link { transition: color .2s; cursor: pointer; } .nav-link:hover { color: #ff3c00; }
+        textarea { resize: none; }
+        .grid-bg { background-image: linear-gradient(rgba(255,60,0,.05) 1px, transparent 1px), linear-gradient(90deg, rgba(255,60,0,.05) 1px, transparent 1px); background-size: 60px 60px; }
+      `}</style>
+
+      {/* NAV */}
+      <nav style={{ position: "fixed", top: 0, left: 0, right: 0, zIndex: 100, padding: "16px 32px", display: "flex", alignItems: "center", justifyContent: "space-between", background: "rgba(5,5,7,.9)", backdropFilter: "blur(20px)", borderBottom: "1px solid rgba(255,255,255,.06)" }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+          <div style={{ width: 32, height: 32, background: "#ff3c00", borderRadius: 6, display: "flex", alignItems: "center", justifyContent: "center", fontWeight: 800, fontSize: 14 }}>V</div>
+          <span style={{ fontWeight: 800, fontSize: 18, letterSpacing: "-0.5px" }}>Vivid<span style={{ color: "#ff3c00" }}>AI</span></span>
+        </div>
+        <div style={{ display: "flex", gap: 32 }}>
+          {NAV_ITEMS.map(n => (
+            <span key={n} className="nav-link" style={{ fontSize: 14, color: "rgba(255,255,255,.6)", fontFamily: "'DM Sans', sans-serif" }} onClick={() => scrollToSection(n.toLowerCase())}>{n}</span>
+          ))}
+        </div>
+        <div style={{ display: "flex", gap: 12, alignItems: "center" }}>
+          <span style={{ fontSize: 13, color: "rgba(255,255,255,.5)", fontFamily: "'DM Sans', sans-serif" }}>Connexion</span>
+          <button className="shimmer-btn" style={{ padding: "9px 20px", borderRadius: 8, border: "none", color: "#fff", fontWeight: 700, fontSize: 13, cursor: "pointer", fontFamily: "'Syne', sans-serif" }} onClick={() => setPage("app")}>
+            Essayer gratuitement →
+          </button>
+        </div>
+      </nav>
+
+      {/* HERO */}
+      <section id="fonctionnalités" style={{ minHeight: "100vh", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: "120px 24px 80px", position: "relative", overflow: "hidden" }} className="grid-bg">
+        {/* Orbs */}
+        <div style={{ position: "absolute", top: "20%", left: "10%", width: 400, height: 400, background: "radial-gradient(circle, rgba(255,60,0,.15) 0%, transparent 70%)", borderRadius: "50%", filter: "blur(40px)", animation: "float 6s ease-in-out infinite" }} />
+        <div style={{ position: "absolute", bottom: "20%", right: "10%", width: 300, height: 300, background: "radial-gradient(circle, rgba(255,122,0,.1) 0%, transparent 70%)", borderRadius: "50%", filter: "blur(40px)", animation: "float 8s ease-in-out infinite reverse" }} />
+        
+        <div style={{ position: "relative", textAlign: "center", maxWidth: 820, animation: "fadeInUp .8s ease forwards" }}>
+          <div style={{ display: "inline-flex", alignItems: "center", gap: 8, background: "rgba(255,60,0,.12)", border: "1px solid rgba(255,60,0,.3)", borderRadius: 100, padding: "6px 16px", marginBottom: 32, fontSize: 12, fontFamily: "'DM Sans', sans-serif", color: "#ff7a00", letterSpacing: "0.05em" }}>
+            <span style={{ width: 6, height: 6, background: "#ff3c00", borderRadius: "50%", animation: "glow-pulse 1.5s ease-in-out infinite" }} />
+            POWERED BY RUNWAY GEN-4 · KLING · WAN 2.1
+          </div>
+          
+          <h1 style={{ fontSize: "clamp(44px, 7vw, 88px)", fontWeight: 800, lineHeight: 1.0, letterSpacing: "-3px", marginBottom: 24 }}>
+            Génère des vidéos<br />
+            <span style={{ color: "#ff3c00", position: "relative" }}>
+              ultra-réalistes
+              <span style={{ position: "absolute", bottom: -4, left: 0, right: 0, height: 3, background: "linear-gradient(90deg, #ff3c00, transparent)", borderRadius: 2 }} />
+            </span><br />
+            en quelques secondes.
+          </h1>
+          
+          <p style={{ fontSize: 18, color: "rgba(255,255,255,.5)", marginBottom: 48, lineHeight: 1.7, fontFamily: "'DM Sans', sans-serif", fontWeight: 300, maxWidth: 560, margin: "0 auto 48px" }}>
+            Tape une phrase. Obtiens une vidéo cinématique 4K. Sans compétences techniques. Utilisé par +12 000 créateurs.
+          </p>
+          
+          {/* CTA */}
+          <div style={{ display: "flex", gap: 16, justifyContent: "center", flexWrap: "wrap" }}>
+            <button className="shimmer-btn" style={{ padding: "16px 36px", borderRadius: 12, border: "none", color: "#fff", fontWeight: 800, fontSize: 16, cursor: "pointer", fontFamily: "'Syne', sans-serif", letterSpacing: "-0.3px" }} onClick={() => setPage("app")}>
+              Créer ma première vidéo →
+            </button>
+            <button style={{ padding: "16px 36px", borderRadius: 12, border: "1px solid rgba(255,255,255,.15)", background: "rgba(255,255,255,.04)", color: "#fff", fontWeight: 600, fontSize: 16, cursor: "pointer", fontFamily: "'Syne', sans-serif" }} onClick={() => scrollToSection("exemples")}>
+              Voir des exemples ▶
+            </button>
+          </div>
+          
+          <p style={{ marginTop: 20, fontSize: 13, color: "rgba(255,255,255,.3)", fontFamily: "'DM Sans', sans-serif" }}>5 crédits gratuits · Aucune CB requise</p>
+        </div>
+
+        {/* Fake video preview */}
+        <div style={{ marginTop: 80, width: "100%", maxWidth: 900, position: "relative" }}>
+          <div style={{ background: "rgba(255,255,255,.04)", border: "1px solid rgba(255,255,255,.08)", borderRadius: 20, overflow: "hidden", aspectRatio: "16/7", display: "flex", alignItems: "center", justifyContent: "center", position: "relative" }}>
+            <div style={{ position: "absolute", inset: 0, background: "linear-gradient(135deg, rgba(255,60,0,.08) 0%, transparent 60%, rgba(255,122,0,.05) 100%)" }} />
+            {/* Scanline effect */}
+            <div style={{ position: "absolute", left: 0, right: 0, height: "30%", background: "linear-gradient(transparent, rgba(255,60,0,.03), transparent)", animation: "scanline 4s linear infinite" }} />
+            <div style={{ textAlign: "center", position: "relative" }}>
+              <div style={{ fontSize: 48, marginBottom: 12 }}>🎬</div>
+              <p style={{ color: "rgba(255,255,255,.4)", fontSize: 14, fontFamily: "'DM Sans', sans-serif" }}>Votre vidéo IA apparaîtra ici</p>
+            </div>
+            {/* Corner labels */}
+            <div style={{ position: "absolute", top: 16, left: 16, background: "rgba(255,60,0,.9)", padding: "4px 10px", borderRadius: 6, fontSize: 11, fontWeight: 700, letterSpacing: "0.1em" }}>LIVE DEMO</div>
+            <div style={{ position: "absolute", top: 16, right: 16, background: "rgba(0,0,0,.5)", padding: "4px 10px", borderRadius: 6, fontSize: 11, color: "rgba(255,255,255,.5)", fontFamily: "'DM Sans', sans-serif" }}>4K · 30fps · HDR</div>
+          </div>
+        </div>
+      </section>
+
+      {/* STATS BAR */}
+      <div style={{ padding: "40px 32px", background: "rgba(255,60,0,.06)", borderTop: "1px solid rgba(255,60,0,.15)", borderBottom: "1px solid rgba(255,60,0,.15)", display: "flex", justifyContent: "center", gap: "clamp(32px, 8vw, 120px)", flexWrap: "wrap" }}>
+        {[["12 000+", "Créateurs actifs"], ["850k+", "Vidéos générées"], ["< 15s", "Temps moyen"], ["4.9/5", "Note utilisateurs"]].map(([val, label]) => (
+          <div key={label} style={{ textAlign: "center" }}>
+            <div style={{ fontSize: "clamp(28px, 4vw, 40px)", fontWeight: 800, color: "#ff3c00", letterSpacing: "-1px" }}>{val}</div>
+            <div style={{ fontSize: 13, color: "rgba(255,255,255,.4)", fontFamily: "'DM Sans', sans-serif", marginTop: 4 }}>{label}</div>
+          </div>
+        ))}
+      </div>
+
+      {/* EXAMPLES */}
+      <section id="exemples" style={{ padding: "100px 32px", maxWidth: 1100, margin: "0 auto" }}>
+        <div style={{ textAlign: "center", marginBottom: 60 }}>
+          <h2 style={{ fontSize: "clamp(32px, 5vw, 56px)", fontWeight: 800, letterSpacing: "-2px", marginBottom: 16 }}>Ce que tu peux créer</h2>
+          <p style={{ color: "rgba(255,255,255,.45)", fontFamily: "'DM Sans', sans-serif", fontSize: 16 }}>Des vidéos pour n'importe quel use-case, en quelques mots</p>
+        </div>
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(240px, 1fr))", gap: 20 }}>
+          {EXAMPLES.map((ex, i) => (
+            <div key={i} className="card-hover" style={{ background: "rgba(255,255,255,.03)", border: "1px solid rgba(255,255,255,.07)", borderRadius: 16, padding: 28, cursor: "pointer", animationDelay: `${i * 0.1}s` }} onClick={() => { setPrompt(ex.desc); setPage("app"); }}>
+              <div style={{ fontSize: 36, marginBottom: 16 }}>{ex.emoji}</div>
+              <div style={{ fontWeight: 700, fontSize: 16, marginBottom: 8 }}>{ex.label}</div>
+              <div style={{ color: "rgba(255,255,255,.4)", fontSize: 14, fontFamily: "'DM Sans', sans-serif", lineHeight: 1.6 }}>"{ex.desc}"</div>
+              <div style={{ marginTop: 20, color: "#ff3c00", fontSize: 13, fontWeight: 600 }}>Essayer →</div>
+            </div>
+          ))}
+        </div>
+      </section>
+
+      {/* HOW IT WORKS */}
+      <section style={{ padding: "80px 32px", background: "rgba(255,255,255,.02)", borderTop: "1px solid rgba(255,255,255,.06)", borderBottom: "1px solid rgba(255,255,255,.06)" }}>
+        <div style={{ maxWidth: 900, margin: "0 auto", textAlign: "center" }}>
+          <h2 style={{ fontSize: "clamp(28px, 4vw, 48px)", fontWeight: 800, letterSpacing: "-1.5px", marginBottom: 60 }}>Comment ça marche</h2>
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: 40 }}>
+            {[
+              ["01", "Décris ta vidéo", "Écris ton prompt en français ou anglais. Sois précis sur l'ambiance, le mouvement, les couleurs."],
+              ["02", "L'IA génère", "Notre pipeline multi-modèles choisit le meilleur moteur selon ton prompt. Résultat en 10-30s."],
+              ["03", "Télécharge et publie", "Vidéo HD sans watermark. Prête pour TikTok, YouTube, Instagram, ads."],
+            ].map(([num, title, desc]) => (
+              <div key={num} style={{ textAlign: "left" }}>
+                <div style={{ fontSize: 48, fontWeight: 800, color: "rgba(255,60,0,.2)", letterSpacing: "-2px", marginBottom: 12 }}>{num}</div>
+                <div style={{ fontWeight: 700, fontSize: 18, marginBottom: 10 }}>{title}</div>
+                <div style={{ color: "rgba(255,255,255,.45)", fontSize: 14, fontFamily: "'DM Sans', sans-serif", lineHeight: 1.7 }}>{desc}</div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* PRICING */}
+      <section id="tarifs" style={{ padding: "100px 32px", maxWidth: 1100, margin: "0 auto" }}>
+        <div style={{ textAlign: "center", marginBottom: 60 }}>
+          <h2 style={{ fontSize: "clamp(32px, 5vw, 56px)", fontWeight: 800, letterSpacing: "-2px", marginBottom: 16 }}>Tarifs simples</h2>
+          <p style={{ color: "rgba(255,255,255,.45)", fontFamily: "'DM Sans', sans-serif" }}>Commence gratuit. Scale quand tu veux.</p>
+        </div>
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))", gap: 20 }}>
+          {PLANS.map((plan) => (
+            <div key={plan.id} className="plan-card" style={{ borderRadius: 20, padding: "32px 24px", background: plan.highlight ? "rgba(255,60,0,.08)" : "rgba(255,255,255,.03)", border: plan.highlight ? "1px solid rgba(255,60,0,.4)" : "1px solid rgba(255,255,255,.07)", position: "relative", cursor: "pointer" }} onMouseEnter={() => setHoveredPlan(plan.id)} onMouseLeave={() => setHoveredPlan(null)} onClick={() => handlePlanSelect(plan)}>
+              {plan.highlight && <div style={{ position: "absolute", top: -12, left: "50%", transform: "translateX(-50%)", background: "#ff3c00", padding: "4px 16px", borderRadius: 100, fontSize: 11, fontWeight: 700, letterSpacing: "0.1em", whiteSpace: "nowrap" }}>⭐ POPULAIRE</div>}
+              <div style={{ marginBottom: 8, fontSize: 12, color: "rgba(255,255,255,.4)", letterSpacing: "0.1em", fontFamily: "'DM Sans', sans-serif" }}>{plan.name.toUpperCase()}</div>
+              <div style={{ fontSize: 40, fontWeight: 800, letterSpacing: "-2px", marginBottom: 4 }}>{plan.price === 0 ? "Gratuit" : `${plan.price}€`}</div>
+              {plan.price > 0 && <div style={{ fontSize: 12, color: "rgba(255,255,255,.35)", marginBottom: 24, fontFamily: "'DM Sans', sans-serif" }}>/mois · annuel</div>}
+              {plan.price === 0 && <div style={{ marginBottom: 24 }} />}
+              <div style={{ borderTop: "1px solid rgba(255,255,255,.08)", paddingTop: 20, marginBottom: 24 }}>
+                {plan.features.map((f, i) => (
+                  <div key={i} style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 12, fontSize: 13, fontFamily: "'DM Sans', sans-serif", color: "rgba(255,255,255,.7)" }}>
+                    <span style={{ color: "#ff3c00", fontSize: 16 }}>✓</span> {f}
+                  </div>
+                ))}
+              </div>
+              <button style={{ width: "100%", padding: "12px", borderRadius: 10, border: plan.highlight ? "none" : "1px solid rgba(255,255,255,.15)", background: plan.highlight ? "#ff3c00" : "rgba(255,255,255,.06)", color: "#fff", fontWeight: 700, fontSize: 14, cursor: "pointer", fontFamily: "'Syne', sans-serif", transition: "all .2s" }}>
+                {selectedPlan?.id === plan.id ? "✓ Sélectionné !" : plan.cta}
+              </button>
+            </div>
+          ))}
+        </div>
+      </section>
+
+      {/* API SECTION */}
+      <section id="api" style={{ padding: "80px 32px", background: "rgba(255,255,255,.02)", borderTop: "1px solid rgba(255,255,255,.06)" }}>
+        <div style={{ maxWidth: 800, margin: "0 auto", display: "flex", gap: 60, alignItems: "center", flexWrap: "wrap" }}>
+          <div style={{ flex: 1, minWidth: 260 }}>
+            <div style={{ fontSize: 12, color: "#ff3c00", letterSpacing: "0.15em", marginBottom: 12, fontFamily: "'DM Sans', sans-serif" }}>POUR LES DÉVELOPPEURS</div>
+            <h2 style={{ fontSize: "clamp(28px, 4vw, 42px)", fontWeight: 800, letterSpacing: "-1.5px", marginBottom: 16 }}>API REST<br />simple & puissante</h2>
+            <p style={{ color: "rgba(255,255,255,.45)", fontFamily: "'DM Sans', sans-serif", lineHeight: 1.7, marginBottom: 24 }}>Intègre la génération vidéo dans ton app en 3 lignes. Docs complètes, SDKs Python & Node.js.</p>
+            <button style={{ padding: "12px 24px", borderRadius: 10, border: "1px solid rgba(255,60,0,.4)", background: "rgba(255,60,0,.1)", color: "#ff7a00", fontWeight: 700, fontSize: 14, cursor: "pointer", fontFamily: "'Syne', sans-serif" }}>Voir la documentation →</button>
+          </div>
+          <div style={{ flex: 1, minWidth: 260, background: "#0a0a0d", border: "1px solid rgba(255,255,255,.08)", borderRadius: 16, padding: 24, fontFamily: "monospace", fontSize: 13 }}>
+            <div style={{ color: "rgba(255,255,255,.3)", marginBottom: 12, fontSize: 11 }}>// Générer une vidéo</div>
+            <div><span style={{ color: "#ff7a00" }}>const</span> <span style={{ color: "#fff" }}>video</span> <span style={{ color: "rgba(255,255,255,.5)" }}>= await</span></div>
+            <div style={{ paddingLeft: 16 }}><span style={{ color: "#ff3c00" }}>vividai</span><span style={{ color: "rgba(255,255,255,.5)" }}>.</span><span style={{ color: "#fff" }}>generate</span><span style={{ color: "rgba(255,255,255,.5)" }}>({"{"}</span></div>
+            <div style={{ paddingLeft: 32, color: "#a8ff78" }}>"Un chat qui saute<br />&nbsp;&nbsp;&nbsp;&nbsp;en slow motion",</div>
+            <div style={{ paddingLeft: 32 }}><span style={{ color: "#69b7ff" }}>duration</span><span style={{ color: "rgba(255,255,255,.5)" }}>: </span><span style={{ color: "#ff7a00" }}>10</span><span style={{ color: "rgba(255,255,255,.5)" }}>,</span></div>
+            <div style={{ paddingLeft: 32 }}><span style={{ color: "#69b7ff" }}>quality</span><span style={{ color: "rgba(255,255,255,.5)" }}>: </span><span style={{ color: "#a8ff78" }}>"4k"</span></div>
+            <div style={{ paddingLeft: 16 }}><span style={{ color: "rgba(255,255,255,.5)" }}>{"})"};</span></div>
+            <div style={{ marginTop: 12, color: "#a8ff78" }}>// → video.url · video.duration</div>
+          </div>
+        </div>
+      </section>
+
+      {/* FOOTER CTA */}
+      <section style={{ padding: "100px 32px", textAlign: "center" }}>
+        <h2 style={{ fontSize: "clamp(32px, 6vw, 64px)", fontWeight: 800, letterSpacing: "-2px", marginBottom: 24 }}>
+          Prêt à créer ?<br />
+          <span style={{ color: "#ff3c00" }}>C'est gratuit.</span>
+        </h2>
+        <button className="shimmer-btn" style={{ padding: "18px 48px", borderRadius: 14, border: "none", color: "#fff", fontWeight: 800, fontSize: 18, cursor: "pointer", fontFamily: "'Syne', sans-serif" }} onClick={() => setPage("app")}>
+          Commencer maintenant →
+        </button>
+        <p style={{ marginTop: 16, color: "rgba(255,255,255,.25)", fontSize: 13, fontFamily: "'DM Sans', sans-serif" }}>5 crédits offerts · Sans CB · Sans engagement</p>
+      </section>
+
+      <footer style={{ padding: "32px", borderTop: "1px solid rgba(255,255,255,.06)", display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 16 }}>
+        <span style={{ fontWeight: 800, fontSize: 16 }}>Vivid<span style={{ color: "#ff3c00" }}>AI</span></span>
+        <span style={{ color: "rgba(255,255,255,.25)", fontSize: 12, fontFamily: "'DM Sans', sans-serif" }}>© 2025 VividAI · CGU · Politique de confidentialité</span>
+        <div style={{ display: "flex", gap: 20 }}>
+          {["Twitter", "Discord", "GitHub"].map(s => <span key={s} style={{ color: "rgba(255,255,255,.3)", fontSize: 13, cursor: "pointer", fontFamily: "'DM Sans', sans-serif" }}>{s}</span>)}
+        </div>
+      </footer>
+    </div>
+  );
+}
+
+function AppPage({ prompt, setPrompt, generating, progress, result, credits, handleGenerate, setPage, examples }) {
+  const [activeExample, setActiveExample] = useState(null);
+
+  return (
+    <div style={{ fontFamily: "'Syne', sans-serif", background: "#050507", color: "#fff", minHeight: "100vh" }}>
+      <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet" />
+      <style>{`
+        * { box-sizing: border-box; } textarea { resize: none; }
+        @keyframes shimmer { 0%{background-position:-200% 0} 100%{background-position:200% 0} }
+        @keyframes spin { from{transform:rotate(0deg)} to{transform:rotate(360deg)} }
+        @keyframes progressFill { from{width:0%} to{width:100%} }
+        @keyframes fadeInUp { from{opacity:0;transform:translateY(20px)} to{opacity:1;transform:translateY(0)} }
+        .shimmer-btn { background: linear-gradient(90deg, #ff3c00 0%, #ff7a00 50%, #ff3c00 100%); background-size: 200% auto; animation: shimmer 2s linear infinite; }
+      `}</style>
+
+      {/* Top bar */}
+      <div style={{ padding: "16px 24px", borderBottom: "1px solid rgba(255,255,255,.07)", display: "flex", alignItems: "center", justifyContent: "space-between", background: "rgba(5,5,7,.95)", backdropFilter: "blur(20px)", position: "sticky", top: 0, zIndex: 50 }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+          <span style={{ cursor: "pointer", color: "rgba(255,255,255,.4)", fontSize: 20 }} onClick={() => setPage("home")}>←</span>
+          <span style={{ fontWeight: 800, fontSize: 16 }}>Vivid<span style={{ color: "#ff3c00" }}>AI</span></span>
+          <span style={{ color: "rgba(255,255,255,.2)" }}>·</span>
+          <span style={{ fontSize: 13, color: "rgba(255,255,255,.4)", fontFamily: "'DM Sans', sans-serif" }}>Studio</span>
+        </div>
+        <div style={{ display: "flex", alignItems: "center", gap: 8, background: "rgba(255,60,0,.1)", border: "1px solid rgba(255,60,0,.25)", borderRadius: 100, padding: "6px 16px" }}>
+          <span style={{ fontSize: 14 }}>💎</span>
+          <span style={{ fontWeight: 700, fontSize: 14 }}>{credits}</span>
+          <span style={{ color: "rgba(255,255,255,.4)", fontSize: 13, fontFamily: "'DM Sans', sans-serif" }}>crédits</span>
+        </div>
+      </div>
+
+      <div style={{ maxWidth: 800, margin: "0 auto", padding: "40px 24px" }}>
+        <h1 style={{ fontSize: "clamp(28px, 4vw, 42px)", fontWeight: 800, letterSpacing: "-1.5px", marginBottom: 8 }}>Créer une vidéo</h1>
+        <p style={{ color: "rgba(255,255,255,.4)", fontFamily: "'DM Sans', sans-serif", marginBottom: 40 }}>Décris la vidéo que tu veux générer</p>
+
+        {/* Prompt area */}
+        <div style={{ background: "rgba(255,255,255,.03)", border: "1px solid rgba(255,255,255,.1)", borderRadius: 16, padding: 20, marginBottom: 20 }}>
+          <textarea
+            value={prompt}
+            onChange={e => setPrompt(e.target.value)}
+            placeholder="Ex: Une femme en robe rouge marche dans une ruelle parisienne sous la pluie, lumière de nuit, cinématique..."
+            style={{ width: "100%", background: "none", border: "none", outline: "none", color: "#fff", fontSize: 16, lineHeight: 1.7, fontFamily: "'DM Sans', sans-serif", minHeight: 100 }}
+          />
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginTop: 16, paddingTop: 16, borderTop: "1px solid rgba(255,255,255,.07)" }}>
+            <span style={{ color: "rgba(255,255,255,.3)", fontSize: 12, fontFamily: "'DM Sans', sans-serif" }}>{prompt.length}/500 caractères</span>
+            <div style={{ display: "flex", gap: 12 }}>
+              <select style={{ background: "rgba(255,255,255,.06)", border: "1px solid rgba(255,255,255,.1)", borderRadius: 8, color: "rgba(255,255,255,.6)", padding: "6px 12px", fontSize: 13, fontFamily: "'DM Sans', sans-serif" }}>
+                <option>5 secondes (1 crédit)</option>
+                <option>10 secondes (2 crédits)</option>
+                <option>15 secondes (3 crédits)</option>
+              </select>
+              <select style={{ background: "rgba(255,255,255,.06)", border: "1px solid rgba(255,255,255,.1)", borderRadius: 8, color: "rgba(255,255,255,.6)", padding: "6px 12px", fontSize: 13, fontFamily: "'DM Sans', sans-serif" }}>
+                <option>1080p HD</option>
+                <option>4K Ultra HD</option>
+              </select>
+            </div>
+          </div>
+        </div>
+
+        {/* Quick examples */}
+        <div style={{ marginBottom: 24 }}>
+          <p style={{ fontSize: 12, color: "rgba(255,255,255,.3)", letterSpacing: "0.1em", marginBottom: 12, fontFamily: "'DM Sans', sans-serif" }}>EXEMPLES RAPIDES</p>
+          <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
+            {examples.map((ex, i) => (
+              <button key={i} style={{ padding: "7px 14px", borderRadius: 100, border: "1px solid rgba(255,255,255,.1)", background: activeExample === i ? "rgba(255,60,0,.15)" : "rgba(255,255,255,.04)", color: activeExample === i ? "#ff7a00" : "rgba(255,255,255,.5)", fontSize: 12, cursor: "pointer", fontFamily: "'DM Sans', sans-serif", transition: "all .2s" }} onClick={() => { setPrompt(ex.desc); setActiveExample(i); }}>
+                {ex.emoji} {ex.label}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {/* Generate button */}
+        <button
+          className={credits > 0 && prompt.trim() ? "shimmer-btn" : ""}
+          disabled={generating || !prompt.trim() || credits <= 0}
+          onClick={handleGenerate}
+          style={{ width: "100%", padding: "16px", borderRadius: 14, border: "none", background: (!prompt.trim() || credits <= 0) ? "rgba(255,255,255,.08)" : undefined, color: (!prompt.trim() || credits <= 0) ? "rgba(255,255,255,.3)" : "#fff", fontWeight: 800, fontSize: 16, cursor: generating || !prompt.trim() || credits <= 0 ? "not-allowed" : "pointer", fontFamily: "'Syne', sans-serif", marginBottom: 32 }}
+        >
+          {generating ? "Génération en cours..." : credits <= 0 ? "Plus de crédits — Upgrade" : "✦ Générer la vidéo (1 crédit)"}
+        </button>
+
+        {/* Progress */}
+        {generating && (
+          <div style={{ marginBottom: 32, animation: "fadeInUp .4s ease" }}>
+            <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 8 }}>
+              <span style={{ fontSize: 13, color: "rgba(255,255,255,.5)", fontFamily: "'DM Sans', sans-serif" }}>
+                {progress < 30 ? "🧠 Analyse du prompt..." : progress < 60 ? "🎨 Génération des frames..." : progress < 90 ? "🎬 Assemblage vidéo..." : "✨ Finalisation..."}
+              </span>
+              <span style={{ fontSize: 13, fontWeight: 700, color: "#ff3c00" }}>{Math.round(progress)}%</span>
+            </div>
+            <div style={{ height: 6, background: "rgba(255,255,255,.06)", borderRadius: 100, overflow: "hidden" }}>
+              <div style={{ height: "100%", background: "linear-gradient(90deg, #ff3c00, #ff7a00)", borderRadius: 100, width: `${progress}%`, transition: "width .3s ease" }} />
+            </div>
+            <div style={{ marginTop: 16, background: "rgba(255,255,255,.02)", border: "1px solid rgba(255,255,255,.06)", borderRadius: 12, padding: "12px 16px", display: "flex", alignItems: "center", gap: 12 }}>
+              <div style={{ width: 8, height: 8, background: "#ff3c00", borderRadius: "50%", animation: "spin 1s linear infinite", flexShrink: 0 }} />
+              <span style={{ fontSize: 13, color: "rgba(255,255,255,.4)", fontFamily: "'DM Sans', sans-serif" }}>Modèle: Runway Gen-4 · ETA: ~{Math.round((100 - progress) / 10)}s</span>
+            </div>
+          </div>
+        )}
+
+        {/* Result */}
+        {result && !generating && (
+          <div style={{ animation: "fadeInUp .5s ease" }}>
+            <div style={{ background: "rgba(255,255,255,.03)", border: "1px solid rgba(255,60,0,.2)", borderRadius: 16, overflow: "hidden" }}>
+              <div style={{ aspectRatio: "16/9", background: "linear-gradient(135deg, rgba(255,60,0,.15) 0%, rgba(0,0,0,.8) 50%, rgba(255,122,0,.1) 100%)", display: "flex", alignItems: "center", justifyContent: "center", position: "relative" }}>
+                <div style={{ textAlign: "center" }}>
+                  <div style={{ fontSize: 56, marginBottom: 12 }}>✅</div>
+                  <p style={{ color: "rgba(255,255,255,.7)", fontFamily: "'DM Sans', sans-serif" }}>Vidéo générée avec succès !</p>
+                  <p style={{ color: "rgba(255,255,255,.3)", fontSize: 13, marginTop: 4, fontFamily: "'DM Sans', sans-serif" }}>{result.duration} · {result.resolution}</p>
+                </div>
+                <div style={{ position: "absolute", top: 12, left: 12, background: "rgba(0,255,0,.2)", border: "1px solid rgba(0,255,0,.3)", padding: "4px 12px", borderRadius: 100, fontSize: 11, color: "#00ff88", fontWeight: 700 }}>✓ TERMINÉ</div>
+              </div>
+              <div style={{ padding: "20px 24px", display: "flex", gap: 12, flexWrap: "wrap" }}>
+                <button className="shimmer-btn" style={{ flex: 1, padding: "12px", borderRadius: 10, border: "none", color: "#fff", fontWeight: 700, fontSize: 14, cursor: "pointer", fontFamily: "'Syne', sans-serif", minWidth: 140 }}>⬇ Télécharger HD</button>
+                <button style={{ flex: 1, padding: "12px", borderRadius: 10, border: "1px solid rgba(255,255,255,.12)", background: "rgba(255,255,255,.04)", color: "#fff", fontWeight: 700, fontSize: 14, cursor: "pointer", fontFamily: "'Syne', sans-serif", minWidth: 140 }}>↗ Partager</button>
+                <button style={{ padding: "12px 20px", borderRadius: 10, border: "1px solid rgba(255,255,255,.12)", background: "rgba(255,255,255,.04)", color: "rgba(255,255,255,.5)", fontSize: 14, cursor: "pointer" }} onClick={() => { setPrompt(""); }}>🔄 Nouveau</button>
+              </div>
+            </div>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+      }
